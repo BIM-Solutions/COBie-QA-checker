@@ -56,3 +56,38 @@ describe('resolveFolderPath', () => {
     expect(resolveFolderPath('  COBie  ', SITE)).toBe('/sites/Project/COBie');
   });
 });
+
+describe('resolveFolderPath does not throw on bad input', () => {
+  // This runs inside the web part's onInit. An exception here does not surface
+  // as a bad path - it leaves the web part blank with nothing to say why.
+
+  it('decodes a multi-byte character in an absolute URL', () => {
+    expect(resolveFolderPath('https://contoso.sharepoint.com/sites/Project/Café', SITE))
+      .toBe('/sites/Project/Café');
+  });
+
+  it('survives a library name containing a literal percent sign', () => {
+    // "100% Complete" reaches the decoder as "100%%20Complete": a literal % the
+    // URL constructor left alone, then a real escape. A whole-string decode
+    // throws URIError on it, which without the salvage pass would blank the
+    // web part on a perfectly ordinary library name.
+    expect(resolveFolderPath('https://contoso.sharepoint.com/sites/Project/100% Complete', SITE))
+      .toBe('/sites/Project/100% Complete');
+  });
+
+  it('falls back to a path when a URL-ish value will not parse', () => {
+    // Half-typed property-pane values. The result is wrong but legible, and the
+    // list call reports it by name.
+    expect(() => resolveFolderPath('https://', SITE)).not.toThrow();
+    expect(() => resolveFolderPath('://', SITE)).not.toThrow();
+    expect(() => resolveFolderPath('ht tp://bad host/x', SITE)).not.toThrow();
+  });
+
+  it('does not decode a path typed directly', () => {
+    // Only the absolute-URL form is decoded, where the encoding is structural.
+    // A typed path is literal, so a folder actually named "50%25" keeps its
+    // name instead of silently becoming "50%".
+    expect(resolveFolderPath('/sites/Project/50%25', SITE)).toBe('/sites/Project/50%25');
+    expect(resolveFolderPath('50%25', SITE)).toBe('/sites/Project/50%25');
+  });
+});
