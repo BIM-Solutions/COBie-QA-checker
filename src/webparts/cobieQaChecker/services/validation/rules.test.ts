@@ -169,6 +169,20 @@ describe('checkUniqueness', () => {
     expect(checkUniqueness(index(wb))).toHaveLength(1);
   });
 
+  it('does not collapse a compound key whose parts merely reflow', () => {
+    // The composite identity is Name + SheetName + RowName joined by a NUL.
+    // Joined by a space instead, these two rows both key to
+    // "air flow component ahu-1" - the boundary between Name and SheetName
+    // moves but the words do not - and the second is reported as a duplicate
+    // of a row it has nothing to do with. Both rows here are distinct.
+    const wb = workbook([sheet('Attribute', [
+      ['Name', 'CreatedBy', 'CreatedOn', 'SheetName', 'RowName', 'Value'],
+      ['Air flow', 'a@b.com', '2026-01-15T09:30:00', 'Component', 'AHU-1', '100'],
+      ['Air', 'a@b.com', '2026-01-15T09:30:00', 'flow Component', 'AHU-1', '120']
+    ])]);
+    expect(checkUniqueness(index(wb))).toHaveLength(0);
+  });
+
   it('does not treat two placeholder names as duplicates of each other', () => {
     // Both rows are already reported as missing a Name. Adding a duplicate
     // finding on top would double-count one defect.

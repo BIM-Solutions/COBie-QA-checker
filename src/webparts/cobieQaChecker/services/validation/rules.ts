@@ -232,7 +232,13 @@ function identityOf(
 
   const sheetName = valueOf(sheet, row, 'SheetName') || '';
   const rowName = valueOf(sheet, row, 'RowName') || '';
-  return [base, sheetName.trim().toLowerCase(), rowName.trim().toLowerCase()].join(' ');
+  // NUL, written as an escape rather than a raw byte: a literal one makes git
+  // treat this file as binary and grep refuse to search it. The separator has
+  // to be a character that cannot occur in a cell, or the parts run together -
+  // name "A" + sheet "B C" and name "A B" + sheet "C" are different rows that a
+  // space-joined key would collapse into one, reporting a duplicate that is not
+  // there.
+  return [base, sheetName.trim().toLowerCase(), rowName.trim().toLowerCase()].join('\u0000');
 }
 
 // ---------------------------------------------------------------------------

@@ -119,6 +119,20 @@ export class SpRunHistoryService {
     this._exists = true;
   }
 
+  /**
+   * Adds one column, then renames it.
+   *
+   * Two calls rather than one, and the order is the whole point. SharePoint
+   * derives a field's **InternalName from `Title` at creation** and freezes it
+   * there; `StaticName` in the creation payload does not reliably override it.
+   * So the field has to be *created* as `CobieCheckedOn` — which is what every
+   * `$select`, `$orderby` and item payload in this class is written against —
+   * and only then given its display title.
+   *
+   * Creating it as "Checked on" instead would produce the internal name
+   * `Checked_x0020_on` and break every read and write here, which is why this
+   * is not the one-line version it looks like it should be.
+   */
   private async _addField(field: { name: string; type: string; title: string }): Promise<void> {
     const response = await this._client.post(
       `${this._webAbsoluteUrl}/_api/web/lists/getByTitle('${RUN_HISTORY_LIST}')/fields`,
@@ -135,6 +149,41 @@ export class SpRunHistoryService {
 
     if (!response.ok && response.status !== 409) {
       throw new Error(`Could not add the ${field.name} column: ${response.status} ${response.statusText}`);
+    }
+
+    await this._renameField(field.name, field.title);
+  }
+
+  /**
+   * Sets a field's display title. InternalName is immutable after creation, so
+   * this is cosmetic only and cannot break the queries above.
+   *
+   * Best-effort for that same reason: a list whose columns read "CobieFileName"
+   * is ugly and entirely usable, so failing provisioning over a display name
+   * would trade a working feature for a cosmetic one. Runs on the 409 path too,
+   * which is what renames the columns of a list left half-provisioned by an
+   * earlier attempt.
+   */
+  private async _renameField(internalName: string, title: string): Promise<void> {
+    try {
+      await this._client.post(
+        `${this._webAbsoluteUrl}/_api/web/lists/getByTitle('${RUN_HISTORY_LIST}')` +
+        `/fields/getByInternalNameOrTitle('${internalName}')`,
+        SPHttpClient.configurations.v1,
+        {
+          headers: {
+            'Content-Type': 'application/json;odata=nometadata',
+            Accept: 'application/json;odata=nometadata',
+            // REST has no PATCH verb here; MERGE with a wildcard ETag is how a
+            // field is updated in place.
+            'X-HTTP-Method': 'MERGE',
+            'IF-MATCH': '*'
+          },
+          body: JSON.stringify({ Title: title })
+        }
+      );
+    } catch {
+      // Deliberately swallowed: see above. The column exists and works.
     }
   }
 

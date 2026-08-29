@@ -1,5 +1,6 @@
 import { SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
 import type { FileSource } from '../parse';
+import { resolveFolderPath } from './folderPath';
 
 /**
  * Reading COBie files out of a SharePoint document library, and writing reports
@@ -127,21 +128,9 @@ export class SpFileService {
     return (body && body.ServerRelativeUrl) || `${folder}/${name}`;
   }
 
-  /**
-   * Accepts `Shared Documents`, `/sites/X/Shared Documents` or a full absolute
-   * URL. Web parts are configured by hand in the property pane and people type
-   * all three; rejecting two of them would be a support burden for no gain.
-   */
+  /** See `resolveFolderPath`, which holds the logic so a test can reach it. */
   public resolveFolder(configured: string): string {
-    const value = (configured || '').trim();
-    if (value === '') { return `${this.siteRoot()}/Shared Documents`; }
-    if (value.indexOf('://') !== -1) { return new URL(value).pathname; }
-    if (value.charAt(0) === '/') { return value.replace(/\/+$/, ''); }
-    return `${this.siteRoot()}/${value.replace(/^\/+|\/+$/g, '')}`;
-  }
-
-  private siteRoot(): string {
-    return this._webServerRelativeUrl.replace(/\/+$/, '');
+    return resolveFolderPath(configured, this._webServerRelativeUrl);
   }
 }
 
