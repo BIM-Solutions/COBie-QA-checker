@@ -1,0 +1,19 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "useGulp": false,
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "22.22.0",
+    "sdksVersions": {},
+    "version": "1.23.1",
+    "libraryName": "cobie-qa-checker",
+    "libraryId": "037b4828-a8f3-4966-b9a8-ca05c2989e20",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "cobie-qa-checker",
+    "solutionShortDescription": "COBie quality control checking inside SharePoint",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}
