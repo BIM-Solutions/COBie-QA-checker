@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "cobie-qa-checker-client-side-solution",
+    "id": "037b4828-a8f3-4966-b9a8-ca05c2989e20",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "BIM Solutions",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.23.1"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "COBie quality control checking inside SharePoint"
+      },
+      "longDescription": {
+        "default": "Validates COBie deliverables held in SharePoint document libraries against the COBie 2.4 schema and reports structural, completeness, referential and format defects."
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "COBie QA Checker Feature",
+        "description": "The feature that activates elements of the cobie-qa-checker solution.",
+        "id": "f522aefb-f451-4850-ba73-86c6cd3338ae",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/cobie-qa-checker.sppkg"
+  }
+}

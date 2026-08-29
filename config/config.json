@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "cobie-qa-checker-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/cobieQaChecker/CobieQaCheckerWebPart.js",
+          "manifest": "./src/webparts/cobieQaChecker/CobieQaCheckerWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "CobieQaCheckerWebPartStrings": "lib/webparts/cobieQaChecker/loc/{locale}.js"
+  }
+}

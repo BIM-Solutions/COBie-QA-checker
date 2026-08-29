@@ -1,0 +1,146 @@
+// Colours come from the SPFx theme tokens the web part sets on its root
+// element, with a fallback for the workbench where no theme is applied. A
+// hard-coded palette would look wrong on every site that is not using the
+// default theme, which is most of them.
+
+.app {
+  color: var(--bodyText, "[theme:bodyText, default:#323130]");
+  background: var(--bodyBackground, "[theme:white, default:#ffffff]");
+  padding: 12px 0;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.headline {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fileName {
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.subtle {
+  color: "[theme:neutralSecondary, default:#605e5c]";
+  font-size: 12px;
+}
+
+// Tiles wrap rather than scroll: on a narrow web part column a horizontal
+// scroller hides the counts that are the whole point of the row.
+.tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tile {
+  flex: 1 1 140px;
+  min-width: 140px;
+  padding: 12px 16px;
+  border: 1px solid var(--dividerLine, "[theme:neutralLight, default:#edebe9]");
+  border-radius: 4px;
+  background: "[theme:neutralLighterAlt, default:#faf9f8]";
+}
+
+.tileValue {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.tileLabel {
+  font-size: 12px;
+  color: "[theme:neutralSecondary, default:#605e5c]";
+}
+
+.error { color: "[theme:redDark, default:#a4262c]"; }
+.warning { color: "[theme:orangeLighter, default:#b86b00]"; }
+.good { color: "[theme:greenDark, default:#0b6a0b]"; }
+
+.clickable {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+
+  &:hover {
+    background: "[theme:neutralLighter, default:#f3f2f1]";
+  }
+
+  // Focus must stay visible: these tiles are buttons and keyboard users need to
+  // see where they are.
+  &:focus-visible {
+    outline: 2px solid "[theme:themePrimary, default:#0078d4]";
+    outline-offset: 2px;
+  }
+}
+
+.selected {
+  border-color: "[theme:themePrimary, default:#0078d4]";
+  border-width: 2px;
+}
+
+.section {
+  margin: 20px 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+// The one place horizontal scrolling is right: a wide table must not force the
+// whole page sideways.
+.tableScroll {
+  overflow-x: auto;
+  border: 1px solid var(--dividerLine, "[theme:neutralLight, default:#edebe9]");
+  border-radius: 4px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.dropZone {
+  border: 2px dashed "[theme:neutralTertiary, default:#a19f9d]";
+  border-radius: 6px;
+  padding: 28px 16px;
+  text-align: center;
+  color: "[theme:neutralSecondary, default:#605e5c]";
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.dropZoneActive {
+  border-color: "[theme:themePrimary, default:#0078d4]";
+  background: "[theme:themeLighterAlt, default:#eff6fc]";
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: "[theme:neutralSecondary, default:#605e5c]";
+}
+
+.rowNumber {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

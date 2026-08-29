@@ -1,0 +1,62 @@
+# Build, lint and test on every pull request and every push to main.
+#
+# `npx heft test` is the whole gate: heft's `test` phase depends on `build`, so one
+# command covers TypeScript, eslint, the webpack bundle and jest. Splitting them
+# would run the toolchain several times for no extra signal.
+#
+# It deliberately does not build the .sppkg — that is a release concern, and a PR
+# gate should be the fastest thing that still tells the truth. It also never needs a
+# dev certificate: only `heft start --serve` does, which is the classic SPFx CI trap
+# and does not apply here.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A new push to a PR makes the previous run's answer irrelevant. `main` is excluded
+# from cancellation: every commit there should have a recorded result.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Build, lint and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # package.json pins ">=22.14.0 < 23.0.0". SPFx 1.23.x supports Node 22 LTS
+      # only, so this is a hard constraint rather than a preference.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build, lint and test
+        run: npx heft test --clean
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      # heft fails on eslint *errors* but not warnings, and this codebase treats the
+      # explicit-return-type warning as an error. Runs after the build because the
+      # config is type-aware and depends on the .scss.ts typings heft generates.
+      - name: Lint, warnings as errors
+        run: npx eslint src --max-warnings 0
+
+      - name: Upload test and lint output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            jest-output/JUnit.xml
+            release/analysis-logs/lint.sarif
