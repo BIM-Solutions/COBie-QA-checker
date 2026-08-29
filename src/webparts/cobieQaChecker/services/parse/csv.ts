@@ -24,8 +24,8 @@ export function detectDelimiter(text: string): ',' | '\t' | ';' {
  * Parses RFC 4180-ish CSV into a grid.
  *
  * Handles quoted fields, escaped quotes (`""`) and newlines inside quotes.
- * Does not handle a byte-order mark — `readTextFile` strips that before this
- * ever sees the text, so the concern lives in one place.
+ * Does not handle a byte-order mark — `readCsv` in `workbookReader` strips that
+ * before this ever sees the text, so the concern lives in one place.
  */
 export function parseDelimited(text: string, delimiter: string): string[][] {
   const rows: string[][] = [];
