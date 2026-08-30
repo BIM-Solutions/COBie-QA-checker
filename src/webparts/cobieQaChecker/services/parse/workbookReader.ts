@@ -123,7 +123,23 @@ function findHeaderRow(grid: string[][]): number {
   return best;
 }
 
-async function readXlsx(file: ArrayBuffer, fileName: string): Promise<ParsedWorkbook> {
+export interface RawSheet {
+  /** Sheet name exactly as it appears in the file. */
+  readonly name: string;
+  /** Every cell, unprocessed: no header detection, no COBie-row shaping. */
+  readonly grid: string[][];
+}
+
+/**
+ * The sheets of an xlsx file as plain grids, before `sheetFromGrid` picks a
+ * header row out of each one.
+ *
+ * Split out from `readXlsx` so a caller that needs to recognise a *non*-COBie
+ * layout - the checker's own exported report, which mixes label/value pairs
+ * with an embedded table - can inspect the raw cells without paying to parse
+ * the workbook a second time.
+ */
+export async function readXlsxSheets(file: ArrayBuffer): Promise<RawSheet[]> {
   // `/browser` rather than the bare package: the root has no CommonJS entry, and
   // the browser build is the one that reads an ArrayBuffer without pulling in
   // Node's fs shims. The dynamic import keeps it out of the entry bundle.
@@ -131,16 +147,23 @@ async function readXlsx(file: ArrayBuffer, fileName: string): Promise<ParsedWork
     /* webpackChunkName: "xlsx-reader" */ 'read-excel-file/browser'
   )).default;
 
+  // One call returns every sheet with its name attached, so there is no second
+  // pass and no chance of the name and the data going out of step.
+  const raw = await readXlsxFile(file);
+  return raw.map((sheet) => ({
+    name: sheet.sheet,
+    grid: sheet.data.map((row) => row.map(cellToString))
+  }));
+}
+
+async function readXlsx(file: ArrayBuffer, fileName: string): Promise<ParsedWorkbook> {
   const sheets: ParsedSheet[] = [];
   const readWarnings: string[] = [];
 
   try {
-    // One call returns every sheet with its name attached, so there is no
-    // second pass and no chance of the name and the data going out of step.
-    const raw = await readXlsxFile(file);
+    const raw = await readXlsxSheets(file);
     for (let i = 0; i < raw.length; i++) {
-      const grid = raw[i].data.map((row) => row.map(cellToString));
-      sheets.push(sheetFromGrid(raw[i].sheet, grid));
+      sheets.push(sheetFromGrid(raw[i].name, raw[i].grid));
     }
   } catch (error) {
     // Becomes an error-severity finding rather than a thrown exception, so a
@@ -176,10 +199,15 @@ export interface FileSource {
   text(): Promise<string>;
 }
 
+/** A COBie report is never written as one of these - `reportFileName` always writes `.xlsx`. */
+export function isDelimitedFileName(name: string): boolean {
+  return /\.(csv|tsv|txt)$/i.test(name);
+}
+
 /** Dispatches on extension. Anything not .csv/.tsv/.txt is tried as xlsx. */
 export async function readWorkbook(file: FileSource): Promise<ParsedWorkbook> {
   const name = file.name;
-  if (/\.(csv|tsv|txt)$/i.test(name)) {
+  if (isDelimitedFileName(name)) {
     return readCsv(await file.text(), name);
   }
   return readXlsx(await file.arrayBuffer(), name);

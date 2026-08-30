@@ -1,10 +1,12 @@
 import { useCallback } from 'react';
 import type { CheckerServices } from '../services/CheckerServices';
 import type { LibraryFile } from '../services/sharepoint';
-import { readWorkbook } from '../services/parse';
+import { isDelimitedFileName, readWorkbook, readXlsxSheets, sheetFromGrid } from '../services/parse';
 import type { FileSource } from '../services/parse';
 import { runChecks } from '../services/validation';
-import { buildReport } from '../services/export';
+import { buildReport, importReport, isCheckReport } from '../services/export';
+import type { CheckRun } from '../models/findings';
+import type { ParsedWorkbook } from '../models/workbook';
 import { useCheckerStore } from '../state/checkerStore';
 
 /**
@@ -14,6 +16,57 @@ import { useCheckerStore } from '../state/checkerStore';
  * validate, record, show - exists once. The three entry points differ only in
  * where the bytes come from.
  */
+
+type ReadResult =
+  | { readonly kind: 'report'; readonly run: CheckRun }
+  | { readonly kind: 'workbook'; readonly parsed: ParsedWorkbook };
+
+/**
+ * Recognises the checker's own exported report before treating the file as a
+ * COBie deliverable.
+ *
+ * `reportFolder` defaults to `sourceFolder`, so an exported report sits right
+ * next to the file it describes and shows up in the same "files in this
+ * library" list. Without this, opening it here fell into the normal check: it
+ * was read as a COBie file, every sheet the schema expects was reported
+ * missing, and the previous run's own results were nowhere to be seen - which
+ * is the bug this guards against. Xlsx sheets are read once, raw, so the file
+ * is not parsed twice on the far more common path where it is not a report.
+ */
+async function readSource(source: FileSource): Promise<ReadResult> {
+  if (isDelimitedFileName(source.name)) {
+    return { kind: 'workbook', parsed: await readWorkbook(source) };
+  }
+
+  try {
+    const raw = await readXlsxSheets(await source.arrayBuffer());
+    if (isCheckReport(raw)) {
+      return { kind: 'report', run: importReport(raw) };
+    }
+    return {
+      kind: 'workbook',
+      parsed: {
+        fileName: source.name,
+        sheets: raw.map((sheet) => sheetFromGrid(sheet.name, sheet.grid)),
+        readWarnings: []
+      }
+    };
+  } catch (error) {
+    // Matches `readWorkbook`'s own handling of an unreadable xlsx file: a
+    // finding explaining why, not a thrown error the user cannot act on.
+    return {
+      kind: 'workbook',
+      parsed: {
+        fileName: source.name,
+        sheets: [],
+        readWarnings: [
+          `The file could not be read as a spreadsheet: ` +
+          `${error instanceof Error ? error.message : String(error)}`
+        ]
+      }
+    };
+  }
+}
 
 export interface UseCheck {
   checkLibraryFile(file: LibraryFile): Promise<void>;
@@ -42,7 +95,17 @@ export function useCheck(services: CheckerServices): UseCheck {
     setBusy(true, `Reading ${source.name}`);
 
     try {
-      const workbook = await readWorkbook(source);
+      const read = await readSource(source);
+
+      if (read.kind === 'report') {
+        setRun(read.run);
+        setBusy(false);
+        setNotice(
+          `This is a COBie check report exported earlier, not a COBie deliverable - ` +
+          `showing the results it already recorded rather than checking it again.`
+        );
+        return;
+      }
 
       setBusy(true, 'Checking against the COBie schema');
       // One yield before the synchronous rule pass, so the browser paints the
@@ -50,7 +113,7 @@ export function useCheck(services: CheckerServices): UseCheck {
       // sees "Reading" throughout and the app looks stuck on a large file.
       await new Promise((resolve) => setTimeout(resolve, 0));
 
-      const run = runChecks(workbook, { checkedBy: services.currentUser });
+      const run = runChecks(read.parsed, { checkedBy: services.currentUser });
       setRun(run);
       setBusy(false);
 

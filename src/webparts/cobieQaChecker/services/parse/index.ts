@@ -1,3 +1,3 @@
-export { readWorkbook, sheetFromGrid, formatLocalIso } from './workbookReader';
-export type { FileSource } from './workbookReader';
+export { readWorkbook, readXlsxSheets, isDelimitedFileName, sheetFromGrid, formatLocalIso } from './workbookReader';
+export type { FileSource, RawSheet } from './workbookReader';
 export { parseDelimited, detectDelimiter } from './csv';
