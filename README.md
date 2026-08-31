@@ -8,6 +8,22 @@ checking it in a desktop tool and uploading a report is the workflow this
 replaces: pick the file from the library, read the findings, export the report
 back to the library.
 
+## Status: proof of concept, validated
+
+Deployed to a real tenant and run against a real COBie workbook. The end-to-end
+path works: read from a document library, check, browse the findings, export
+the report back, record the run.
+
+That exercise found bugs, as it was meant to. They have been fixed; the one
+worth knowing about is described under [Reading COBie files](#reading-cobie-files),
+because it changed how the web part behaves rather than just what it computes.
+The rest were minor and are not itemised here.
+
+**The current ruleset is accepted as the proof-of-concept baseline.** It is the
+basic COBie 2.4 schema — structure, completeness, references, formats. Richer
+and more prescriptive rules are a later stage, and `models/cobieSchema.ts` is
+the seam they go through.
+
 ## What it checks
 
 Seven families of rule, all driven from one schema definition
@@ -52,6 +68,13 @@ sitting below a title band is found rather than assumed to be row 1. Every
 finding carries the real spreadsheet row number, so it can be looked up in
 Excel directly.
 
+**Its own reports are recognised, not re-checked.** Reports default to the same
+library as the file they describe, so they appear in the same file list,
+inviting a click. Tenant testing found that clicking one ran a COBie check
+*on the report* — every schema sheet reported missing, and the results the
+report already held nowhere to be seen. Opening a report now restores the run
+it recorded and says so.
+
 ## Where things are stored
 
 Everything stays inside Microsoft 365 — no Azure, no database, no third-party
@@ -60,7 +83,8 @@ service.
 - **COBie files** are read from the document library set in the property pane
   (default: `Shared Documents`).
 - **Reports** are exported as a two-sheet Excel workbook — a summary and a
-  findings work list — written back to the library.
+  findings work list — written back to the library, and can be reopened later
+  to see the run they recorded.
 - **Run history** is one row per check in a `COBie Check History` list, which
   the web part creates on the site the first time it needs it. Only the
   summary is stored, never the findings: a single run would blow past the
@@ -116,6 +140,9 @@ and any site can add the web part.
 
 ## What this does not do
 
+Scope of the proof-of-concept baseline. The first three are candidates for the
+next stage rather than permanent limits.
+
 - **No IFC.** It checks the COBie spreadsheet, not the model it came from.
 - **No classification validation.** `Category` is checked against the file's
   own `PickLists` sheet when it has one, and otherwise not at all —
@@ -124,4 +151,4 @@ and any site can add the web part.
 - **No custom rulesets.** The schema is COBie 2.4 as published. Narrowing it
   to a client's own MIDP is a change to `cobieSchema.ts`, which is where that
   seam deliberately sits.
-- **No findings in run history.** By design; see above.
+- **No findings in run history.** By design, and not a candidate: see above.
