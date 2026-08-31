@@ -13,8 +13,12 @@ import { useCheckerStore } from '../state/checkerStore';
  * The one place a check actually happens.
  *
  * Everything the screens do funnels through here so that the sequence - read,
- * validate, record, show - exists once. The three entry points differ only in
- * where the bytes come from.
+ * validate, record, show - exists once. The two check entry points differ only
+ * in where the bytes come from.
+ *
+ * One branch interrupts that sequence: a file that turns out to be the
+ * checker's own exported report is restored rather than checked. See
+ * `readSource`.
  */
 
 type ReadResult =
